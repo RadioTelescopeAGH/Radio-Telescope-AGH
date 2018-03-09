@@ -10,7 +10,7 @@ git clone https://github.com/RadioTelescopeAGH/Radio-Telescope-AGH.git
 
 ### New Branch
 
-To craate new branch:
+To create new branch:
 ```
 git checkout -b [name_of_your_new_branch]
 ```
