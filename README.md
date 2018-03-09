@@ -16,10 +16,10 @@ git checkout -b [name_of_your_new_branch]
 ```
 
 ### Merging 
-To merge branch A into master
+To merge branch A into master:
 ```
 git checkout master
-git merge B
+git merge A
 ```
 
 ##Every directory contains one sub module for the project.
