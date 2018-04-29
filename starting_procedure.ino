@@ -2,22 +2,23 @@
 #include <LiquidCrystal.h>
 #include <LiquidCrystal_I2C.h>
 #include <OneWire.h>
-#include <DS18B20.h>
 #include <Wire.h>
+#include <DS18B20.h>
 #include <LSM6.h>
 #include <LIS3MDL.h>
+#include <DHT.h>
 #include <math.h>
 
 #include "Accelerometer.h"
 #include "Magnetometer.h"
-//
 
-//
 #define BIG_PUSH_BUTTON      4
 #define IGNATION_SWITCH_1    6
 #define IGNATION_SWITCH_2    7
 #define ONEWIRE_PIN          5
 #define TERMOMETERS          5
+#define DHTPIN               8
+#define DHTTYPE          DHT11 
 
 const byte address[5][8] PROGMEM{
   {0x28, 0xFF, 0xC4, 0x67, 0x31, 0x17, 0x3, 0x76},// green
@@ -31,11 +32,14 @@ float temperature[5] = {0,0,0,0,0};
 float angles[2] = {0, 0};
 float magnetic[3] = {0,0,0};
 float magnetic_angle = 0;
+float dht11_data[2] = {0,0};
 
 bool power_up = true;
 
 OneWire onewire(ONEWIRE_PIN);
 DS18B20 sensors(&onewire);
+
+DHT dht(DHTPIN, DHTTYPE);
 
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
@@ -61,22 +65,22 @@ void setup() {
   sensors.begin();
   sensors.request();
 
-//check if main sensors are operational  
- if (!imu.init())
+  dht.begin();
+  //check if main sensors are operational  
+  if (!imu.init())
   {
     Serial.println("Failed to detect and initialize IMU!");
     while (1);
   }
   imu.enableDefault();
   
-   if (!mag.init())
+  if (!mag.init())
   {
     Serial.println("Failed to detect and initialize magnetometer!");
     while (1);
   }
 
   mag.enableDefault();
-
   
   // LCD: 16 chars 2 lines
   // Intro sequence 
@@ -99,13 +103,15 @@ void setup() {
       power_up = false;
       
     }
-  }*/
+  }
 }
 
 void loop() {
     accelerometer(angles);
     magnetometer(magnetic);
-    magnetic_angle = tilt_compensated_magnetometer(magnetic[0], magnetic[1], magnetic[2], angles[0], angles[1]);    
+    magnetic_angle = tilt_compensated_magnetometer(magnetic[0], magnetic[1], magnetic[2], angles[0], angles[1]);
+    dht11(dht11_data);
+        
     
 }
 
@@ -125,11 +131,24 @@ void termometer(){ //get readings from all ddigital termometers
     {
       float temperatureC = sensors.readTemperature(FA(address[i]));
 
-       *(temperature+i) = temperatureC;
-      
+      *(temperature+i) = temperatureC;
     }
-
     sensors.request();
   }
 }
 
+void dht11(float tab[]) {
+
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+
+  // Check if sensor is working
+  if (isnan(t) || isnan(h))
+  { //if isn't working
+    Serial.println("DHT11 error");
+  }
+  else {
+    tab[0] = t;
+    tab[1] = h;
+  }
+}
